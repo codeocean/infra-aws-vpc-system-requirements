@@ -1,4 +1,9 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["pyyaml"]
+# ///
+
 """
 System Requirements Document Generator
 
@@ -283,7 +288,7 @@ def main():
     parser.add_argument(
         "template_path",
         nargs="?",
-        default="../codeocean.template.yaml",
+        default="codeocean.template.yaml",
         help="Path to the CloudFormation template file (default: codeocean.template.yaml)"
     )
     parser.add_argument(
