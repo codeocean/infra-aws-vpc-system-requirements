@@ -77,13 +77,57 @@ Code Ocean pushes all OS and application logs to CloudWatch Logs. This log data 
 
 | Parameter | Type | Default | Description |
 | --------- | ---- | ------- | ----------- |
+| **Domain Configuration** | | | |
+| [pDnsName](codeocean.template.yaml#L473) | String | `codeocean` | Code Ocean application subdomain |
+| [pDnsRootDomain](codeocean.template.yaml#L477) | String |  | Root domain name (e.g. acmecorp.com) |
+| [pHostedZoneId](codeocean.template.yaml#L480) | String |  | (Optional) Existing Route 53 hosted zone ID |
+| **TLS Certificate Configuration** | | | |
+| [pCertificateArn](codeocean.template.yaml#L484) | String |  | (Optional) Existing ACM certificate ARN |
+| [pPrivateCA](codeocean.template.yaml#L488) | String | `false` | Is the certificate signed by a private certificate authority? |
+| **VPC Configuration (Use Existing)** | | | |
 | [pVpcId](codeocean.template.yaml#L295) | String |  | Existing VPC ID. If not specified, a VPC will be created. |
 | [pAvailabilityZone1](codeocean.template.yaml#L299) | String |  | Availability Zone 1 for the existing VPC |
-| [pPrivateSubnet1Id](codeocean.template.yaml#L303) | String |  | Subnet ID for private subnet 1 located in Availability Zone 1 in Existing VPC |
-| [pPublicSubnet1Id](codeocean.template.yaml#L307) | String |  | Subnet ID for public subnet 1 located in Availability Zone 1 in Existing VPC |
 | [pAvailabilityZone2](codeocean.template.yaml#L311) | String |  | Availability Zone 2 for the existing VPC |
+| [pPrivateSubnet1Id](codeocean.template.yaml#L303) | String |  | Subnet ID for private subnet 1 located in Availability Zone 1 in Existing VPC |
 | [pPrivateSubnet2Id](codeocean.template.yaml#L315) | String |  | Subnet ID for private subnet 2 located in Availability Zone 2 in Existing VPC |
+| [pPublicSubnet1Id](codeocean.template.yaml#L307) | String |  | Subnet ID for public subnet 1 located in Availability Zone 1 in Existing VPC |
 | [pPublicSubnet2Id](codeocean.template.yaml#L319) | String |  | Subnet ID for public subnet 2 located in Availability Zone 2 in Existing VPC |
+| **VPC Configuration (Create New)** | | | |
+| [pNewVpcAvailabilityZone1](codeocean.template.yaml#L377) | String |  | Availability Zone 1 for the new VPC |
+| [pNewVpcAvailabilityZone2](codeocean.template.yaml#L393) | String |  | Availability Zone 2 for the new VPC |
+| [pVpcCIDR](codeocean.template.yaml#L371) | String | `10.0.0.0/16` | CIDR block for the VPC |
+| [pPrivateSubnet1CIDR](codeocean.template.yaml#L381) | String | `10.0.0.0/20` | CIDR block for private subnet 1 located in Availability Zone 1 |
+| [pPrivateSubnet2CIDR](codeocean.template.yaml#L397) | String | `10.0.16.0/20` | CIDR block for private subnet 2 located in Availability Zone 2 |
+| [pPublicSubnet1CIDR](codeocean.template.yaml#L387) | String | `10.0.96.0/20` | CIDR block for public subnet 1 located in Availability Zone 1 |
+| [pPublicSubnet2CIDR](codeocean.template.yaml#L403) | String | `10.0.112.0/20` | CIDR block for public subnet 2 located in Availability Zone 2 |
+| **Deployment Type Configuration** | | | |
+| [pDeploymentType](codeocean.template.yaml#L500) | String | `internet-facing` | Make the deployment internet addressable (default) or require a VPN to connect |
+| **Custom AMI Configuration** | | | |
+| [pCustomAmi](codeocean.template.yaml#L495) | String |  | (Optional) Custom AMI ID to use for services, workers, and batch instances |
+| **Services Machine Configuration** | | | |
+| [pServicesInstanceType](codeocean.template.yaml#L507) | String | `m7i.large` | EC2 instance type for services machine. |
+| **Worker Configuration** | | | |
+| [pWorkerInstanceType](codeocean.template.yaml#L517) | String | `r5d.4xlarge` | EC2 instance type for general purpose workers. Instance type must be from the 'r5d' family. |
+| [pWorkersAsgMaxSize](codeocean.template.yaml#L529) | Number | `10` | Maximum number of running worker instances |
+| [pMinWorkersAvailable](codeocean.template.yaml#L537) | Number | `1` | Minimum number of worker instances the system keeps in its auto scaling warm pool that are ready to receive computations |
+| [pGPUWorkerInstanceType](codeocean.template.yaml#L523) | String | `g4dn.4xlarge` | EC2 instance type for GPU Workers. Instance type must belong to the P (3\|3dn\|4d\|5) or G (4ad\|4dn\|5\|6\|r6) families. |
+| [pGpuWorkersAsgMaxSize](codeocean.template.yaml#L533) | Number | `10` | Maximum number of running GPU worker instances |
+| [pMinGpuWorkersAvailable](codeocean.template.yaml#L541) | Number | `1` | Minimum number of GPU worker instances the system keeps in its auto scaling warm pool that are ready to receive computations |
+| [pAutoScalingIdleTimeout](codeocean.template.yaml#L545) | Number | `60` | Number of minutes before system scales-in idle workers |
+| **Analytics RDS Configuration** | | | |
+| [pRdsInstanceType](codeocean.template.yaml#L549) | String | `db.t4g.small` | RDS instance type for analytics |
+| [pRdsAllocatedStorage](codeocean.template.yaml#L556) | Number | `20` | RDS instance allocated storage |
+| [pRdsMaxAllocatedStorage](codeocean.template.yaml#L561) | Number | `100` | RDS instance maximum allocated storage |
+| **IAM Configuration** | | | |
+| [pAssumableRoles](codeocean.template.yaml#L566) | CommaDelimitedList |  |  |
+| **Pipeline Configuration** | | | |
+| [pBatchMaxvCpus](codeocean.template.yaml#L569) | Number | `256` | Maximum number of vCPUs that can be used by all batch instances |
+| [BatchInstanceTypes](codeocean.template.yaml#L573) | CommaDelimitedList | `c7i,m7i,r7i,optimal` | Comma-delimited list of batch instance types for pipelines |
+| [BatcGpuInstanceTypes](codeocean.template.yaml#L577) | CommaDelimitedList | `g4dn` | Comma-delimited list of batch instance types for GPU pipelines |
+| [pBatchVolumeSize](codeocean.template.yaml#L581) | Number | `300` | Volume size, in gigabytes, of the Docker's EBS volumes for batch instances |
+| [pBatchVolumeIops](codeocean.template.yaml#L587) | Number | `5000` | Volume IOPS, number of I/O operations per second, of the Docker's EBS volumes for batch instances |
+| [pBatchVolumeThroughput](codeocean.template.yaml#L593) | Number | `500` | Volume Throughput, in MiB/s, of the Docker's EBS volumes for batch instances |
+| **(Optional) Network Extension Configurations for Existing VPC** | | | |
 | [pAvailabilityZone3](codeocean.template.yaml#L323) | String |  | Availability Zone 3 for the existing VPC |
 | [pPrivateSubnet3Id](codeocean.template.yaml#L327) | String |  | Subnet ID for private subnet 3 located in Availability Zone 3 in Existing VPC |
 | [pPublicSubnet3Id](codeocean.template.yaml#L331) | String |  | Subnet ID for public subnet 3 located in Availability Zone 3 in Existing VPC |
@@ -96,13 +140,7 @@ Code Ocean pushes all OS and application logs to CloudWatch Logs. This log data 
 | [pAvailabilityZone6](codeocean.template.yaml#L359) | String |  | Availability Zone 6 for the existing VPC |
 | [pPrivateSubnet6Id](codeocean.template.yaml#L363) | String |  | Subnet ID for private subnet 6 located in Availability Zone 6 in Existing VPC |
 | [pPublicSubnet6Id](codeocean.template.yaml#L367) | String |  | Subnet ID for public subnet 6 located in Availability Zone 6 in Existing VPC |
-| [pVpcCIDR](codeocean.template.yaml#L371) | String | `10.0.0.0/16` | CIDR block for the VPC |
-| [pNewVpcAvailabilityZone1](codeocean.template.yaml#L377) | String |  | Availability Zone 1 for the new VPC |
-| [pPrivateSubnet1CIDR](codeocean.template.yaml#L381) | String | `10.0.0.0/20` | CIDR block for private subnet 1 located in Availability Zone 1 |
-| [pPublicSubnet1CIDR](codeocean.template.yaml#L387) | String | `10.0.96.0/20` | CIDR block for public subnet 1 located in Availability Zone 1 |
-| [pNewVpcAvailabilityZone2](codeocean.template.yaml#L393) | String |  | Availability Zone 2 for the new VPC |
-| [pPrivateSubnet2CIDR](codeocean.template.yaml#L397) | String | `10.0.16.0/20` | CIDR block for private subnet 2 located in Availability Zone 2 |
-| [pPublicSubnet2CIDR](codeocean.template.yaml#L403) | String | `10.0.112.0/20` | CIDR block for public subnet 2 located in Availability Zone 2 |
+| **(Optional) Network Extension Configurations for New VPC** | | | |
 | [pNewVpcAvailabilityZone3](codeocean.template.yaml#L409) | String |  | Availability Zone 3 for the new VPC |
 | [pPrivateSubnet3CIDR](codeocean.template.yaml#L413) | String | `10.0.32.0/20` | CIDR block for private subnet 3 located in Availability Zone 3 |
 | [pPublicSubnet3CIDR](codeocean.template.yaml#L419) | String | `10.0.128.0/20` | CIDR block for public subnet 3 located in Availability Zone 3 |
@@ -115,31 +153,7 @@ Code Ocean pushes all OS and application logs to CloudWatch Logs. This log data 
 | [pNewVpcAvailabilityZone6](codeocean.template.yaml#L457) | String |  | Availability Zone 6 for the new VPC |
 | [pPrivateSubnet6CIDR](codeocean.template.yaml#L461) | String | `10.0.80.0/20` | CIDR block for private subnet 6 located in Availability Zone 6 |
 | [pPublicSubnet6CIDR](codeocean.template.yaml#L467) | String | `10.0.176.0/20` | CIDR block for public subnet 6 located in Availability Zone 6 |
-| [pDnsName](codeocean.template.yaml#L473) | String | `codeocean` | Code Ocean application subdomain |
-| [pDnsRootDomain](codeocean.template.yaml#L477) | String |  | Root domain name (e.g. acmecorp.com) |
-| [pHostedZoneId](codeocean.template.yaml#L480) | String |  | (Optional) Existing Route 53 hosted zone ID |
-| [pCertificateArn](codeocean.template.yaml#L484) | String |  | (Optional) Existing ACM certificate ARN |
-| [pPrivateCA](codeocean.template.yaml#L488) | String | `false` | Is the certificate signed by a private certificate authority? |
-| [pCustomAmi](codeocean.template.yaml#L495) | String |  | (Optional) Custom AMI ID to use for services, workers, and batch instances |
-| [pDeploymentType](codeocean.template.yaml#L500) | String | `internet-facing` | Make the deployment internet addressable (default) or require a VPN to connect |
-| [pServicesInstanceType](codeocean.template.yaml#L507) | String | `m7i.large` | EC2 instance type for services machine. |
-| [pWorkerInstanceType](codeocean.template.yaml#L517) | String | `r5d.4xlarge` | EC2 instance type for general purpose workers. Instance type must be from the 'r5d' family. |
-| [pGPUWorkerInstanceType](codeocean.template.yaml#L523) | String | `g4dn.4xlarge` | EC2 instance type for GPU Workers. Instance type must belong to the P (3\|3dn\|4d\|5) or G (4ad\|4dn\|5\|6\|r6) families. |
-| [pWorkersAsgMaxSize](codeocean.template.yaml#L529) | Number | `10` | Maximum number of running worker instances |
-| [pGpuWorkersAsgMaxSize](codeocean.template.yaml#L533) | Number | `10` | Maximum number of running GPU worker instances |
-| [pMinWorkersAvailable](codeocean.template.yaml#L537) | Number | `1` | Minimum number of worker instances the system keeps in its auto scaling warm pool that are ready to receive computations |
-| [pMinGpuWorkersAvailable](codeocean.template.yaml#L541) | Number | `1` | Minimum number of GPU worker instances the system keeps in its auto scaling warm pool that are ready to receive computations |
-| [pAutoScalingIdleTimeout](codeocean.template.yaml#L545) | Number | `60` | Number of minutes before system scales-in idle workers |
-| [pRdsInstanceType](codeocean.template.yaml#L549) | String | `db.t4g.small` | RDS instance type for analytics |
-| [pRdsAllocatedStorage](codeocean.template.yaml#L556) | Number | `20` | RDS instance allocated storage |
-| [pRdsMaxAllocatedStorage](codeocean.template.yaml#L561) | Number | `100` | RDS instance maximum allocated storage |
-| [pAssumableRoles](codeocean.template.yaml#L566) | CommaDelimitedList |  |  |
-| [pBatchMaxvCpus](codeocean.template.yaml#L569) | Number | `256` | Maximum number of vCPUs that can be used by all batch instances |
-| [BatchInstanceTypes](codeocean.template.yaml#L573) | CommaDelimitedList | `c7i,m7i,r7i,optimal` | Comma-delimited list of batch instance types for pipelines |
-| [BatcGpuInstanceTypes](codeocean.template.yaml#L577) | CommaDelimitedList | `g4dn` | Comma-delimited list of batch instance types for GPU pipelines |
-| [pBatchVolumeSize](codeocean.template.yaml#L581) | Number | `300` | Volume size, in gigabytes, of the Docker's EBS volumes for batch instances |
-| [pBatchVolumeIops](codeocean.template.yaml#L587) | Number | `5000` | Volume IOPS, number of I/O operations per second, of the Docker's EBS volumes for batch instances |
-| [pBatchVolumeThroughput](codeocean.template.yaml#L593) | Number | `500` | Volume Throughput, in MiB/s, of the Docker's EBS volumes for batch instances |
+| **(Optional) Backup Configuration** | | | |
 | [pBackupSchedule](codeocean.template.yaml#L599) | String | `cron(0 4 ? * * *)` | Backup schedule CRON expression |
 | [pBackupRetentionPeriod](codeocean.template.yaml#L603) | Number | `14` | Backup retention period in days |
 | [pDestinationBackupVaultArn](codeocean.template.yaml#L608) | String |  | Copy backup snapshots to a destination backup vault |
@@ -156,6 +170,7 @@ Code Ocean pushes all OS and application logs to CloudWatch Logs. This log data 
 | [pDestinationBackupPackagesBucketArn](codeocean.template.yaml#L659) | String |  | Destination backup S3 packages bucket ARN |
 | [pDestinationBackupPublicBucketArn](codeocean.template.yaml#L663) | String |  | Destination backup S3 public bucket ARN |
 | [pDestinationBackupResultsBucketArn](codeocean.template.yaml#L667) | String |  | Destination backup S3 results bucket ARN |
+| **Restore Configuration** | | | |
 | [pRestoreSourceAccountId](codeocean.template.yaml#L671) | String |  | (Optional) AWS Account ID to restore backups from |
 
 ## Resources
