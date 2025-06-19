@@ -14,7 +14,7 @@ a comprehensive system requirements document in Markdown format.
 import yaml
 import argparse
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any
 
 
 class SystemRequirementsGenerator:
@@ -68,7 +68,7 @@ class SystemRequirementsGenerator:
         metadata = self.template_data.get("Metadata", {})
         version_info = metadata.get("CodeOcean::VersionInfo", {})
         
-        overview = f"""## Overview
+        overview = """## Overview
 
 This document provides a comprehensive overview of the system requirements and infrastructure components defined in the Code Ocean VPC CloudFormation template. It serves as a reference for understanding the deployment architecture, resource dependencies, and configuration parameters required for the Code Ocean VPC system.
 
@@ -152,11 +152,16 @@ Code Ocean pushes all OS and application logs to CloudWatch Logs. This log data 
 """
     
     def _generate_parameters_table(self) -> str:
-        """Generate the parameters table."""
+        """Generate the parameters table organized by CloudFormation Interface groups."""
         parameters = self.template_data.get("Parameters", {})
         
         if not parameters:
             return "## Parameters\n\nNo parameters defined in this template.\n"
+        
+        # Get parameter groups from CloudFormation Interface
+        metadata = self.template_data.get("Metadata", {})
+        cf_interface = metadata.get("AWS::CloudFormation::Interface", {})
+        parameter_groups = cf_interface.get("ParameterGroups", [])
         
         table = """## Parameters
 
@@ -164,19 +169,54 @@ Code Ocean pushes all OS and application logs to CloudWatch Logs. This log data 
 | --------- | ---- | ------- | ----------- |
 """
         
-        for param_name, param_config in parameters.items():
-            param_type = param_config.get("Type", "String")
-            default = param_config.get("Default", "")
-            description = param_config.get("Description", "").replace("\n", " ").replace("|", "\\|")
+        # Track parameters that have been added to avoid duplicates
+        added_parameters = set()
+        
+        # Process parameter groups in order
+        for group in parameter_groups:
+            label = group.get("Label", {}).get("default", "Unnamed Group")
+            group_parameters = group.get("Parameters", [])
             
-            # Get line number for link
-            line_num = self.line_numbers.get(f"param_{param_name}", "")
-            link_text = f"[{param_name}](codeocean.template.yaml#L{line_num})" if line_num else param_name
-            
-            # Format default value
-            default_str = f"`{default}`" if default else ""
-            
-            table += f"| {link_text} | {param_type} | {default_str} | {description} |\n"
+            if group_parameters:
+                # Add group header
+                table += f"| **{label}** | | | |\n"
+                
+                # Add parameters in this group
+                for param_name in group_parameters:
+                    if param_name in parameters and param_name not in added_parameters:
+                        param_config = parameters[param_name]
+                        param_type = param_config.get("Type", "String")
+                        default = param_config.get("Default", "")
+                        description = param_config.get("Description", "").replace("\n", " ").replace("|", "\\|")
+                        
+                        # Get line number for link
+                        line_num = self.line_numbers.get(f"param_{param_name}", "")
+                        link_text = f"[{param_name}](codeocean.template.yaml#L{line_num})" if line_num else param_name
+                        
+                        # Format default value
+                        default_str = f"`{default}`" if default else ""
+                        
+                        table += f"| {link_text} | {param_type} | {default_str} | {description} |\n"
+                        added_parameters.add(param_name)
+        
+        # Add any parameters not in groups at the end
+        ungrouped_parameters = [name for name in parameters.keys() if name not in added_parameters]
+        if ungrouped_parameters:
+            table += "| **Other Parameters** | | | |\n"
+            for param_name in sorted(ungrouped_parameters):
+                param_config = parameters[param_name]
+                param_type = param_config.get("Type", "String")
+                default = param_config.get("Default", "")
+                description = param_config.get("Description", "").replace("\n", " ").replace("|", "\\|")
+                
+                # Get line number for link
+                line_num = self.line_numbers.get(f"param_{param_name}", "")
+                link_text = f"[{param_name}](codeocean.template.yaml#L{line_num})" if line_num else param_name
+                
+                # Format default value
+                default_str = f"`{default}`" if default else ""
+                
+                table += f"| {link_text} | {param_type} | {default_str} | {description} |\n"
         
         return table
     
@@ -267,17 +307,19 @@ Code Ocean pushes all OS and application logs to CloudWatch Logs. This log data 
         
         return doc
     
-    def save_document(self, output_path: str = None) -> str:
+    def save_document(self, output_path: str | None = None) -> str:
         """Generate and save the requirements document."""
         if output_path is None:
-            output_path = self.template_path.parent / "System Requirements.md"
+            final_path = self.template_path.parent / "System Requirements.md"
+        else:
+            final_path = Path(output_path)
         
         document = self.generate_requirements_document()
         
-        with open(output_path, "w", encoding="utf-8") as file:
+        with open(final_path, "w", encoding="utf-8") as file:
             file.write(document)
         
-        return str(output_path)
+        return str(final_path)
 
 
 def main():
