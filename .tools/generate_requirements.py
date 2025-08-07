@@ -101,22 +101,48 @@ If you choose to install Code Ocean into its own dedicated AWS VPC the CloudForm
 
 If you choose to install Code Ocean into an existing AWS VPC you can configure the CloudFormation template with the two availability zones and the private and public subnets to deploy to. Public subnets are required if you choose an internet-facing deployment.
 
-### EC2
+Dedicated machines can run across up to six availability zones to provide maximum instance type availability throughout the region. The availability zones and CIDR blocks for the subnets are configurable.
+
+### EC2, Batch and ECS
 
 Code Ocean uses an HTTPS-only AWS application load balancer (ALB) to expose the system to users and to allow access to its internal Git server and Docker registry. The ALB can be internet-facing or internal for deployments behind a VPN.
 
-The system manages two types of EC2 instances:
+The system manages five types of EC2 instances:
 
 * Services - Single machine in an auto-scale group attached to an internal load balancer that runs all internal system services.
-* Workers - Two auto-scale groups of worker machines where the actual users computations are running. One auto scale group for GPU based computations and the other for general non-GPU computations. When you run a Compute Capsule within Code Ocean it gets scheduled to run on one of the worker machines. The system will automatically provision more worker machines (scale out) as the load increases and deprovision worker machines (scale in) as the load decreases.
+
+* Flex Workers - Two auto-scale groups of worker machines where the actual users computations are running. One auto scale group for GPU based computations and the other for general non-GPU computations. When you run a Compute Capsule within Code Ocean it gets scheduled to run on one of the worker machines. The system will automatically provision more worker machines (scale out) as the load increases and deprovision worker machines (scale in) as the load decreases.
+
+* Dedicated Machines - Instances launched exclusively to run user computations. Users can select the instance type from a wide range of instance specifications, including spot instance to reduce cost. Administrators can configure the list of available instance specifications.
+
+* System Jobs - An AWS Batch ECS cluster of instances designed to run asynchronous, resource intensive system jobs such as the creation and indexing of large data assets. The number and types of instances in the cluster are automatically determined by ECS based on the number of jobs and their resource requirements.
+
+* Pipelines - Four AWS Batch ECS clusters of instances that support the execution of Nextflow pipelines, with options for GPU or non-GPU instances, and Spot or On-Demand types. The number and types of instances in the cluster are automatically determined by ECS based on the number of running pipelines and their resource requirements.
 
 The deployment is configured with security groups to control network flow between parts of the system and IAM instance roles for each instance type to limit access to AWS resources.
 
 Shell access to the EC2 instances is available through AWS SSM Session Manager.
 
+### AMI
+
+Each version of Code Ocean VPC comes with a dedicated AMI that is specified in the CloudFormation template. The AMI is based on Amazon Linux 2023 and is used for all types of Code Ocean instances. 
+Code Ocean AMIs are shared with customers as soon as the corresponding version is released.
+
+In environments subject to stringent external AMI usage policies, you may instead build your own AMI and override the default by supplying its ID via the custom AMI ID parameter in the CloudFormation template.
+
+### ECR
+
+Docker images for Code Ocean services and tools are published to the [Code Ocean registry](https://gallery.ecr.aws/codeocean) in AWS Public ECR and are automatically pulled by Code Ocean instances, delivering fast, reliable distribution and a consistent container-based microservices architecture.
+
+If you operate under strict security or compliance constraints, you can mirror each release's docker images into your own private ECR or any OCI-compatible registry by:
+
+1. Pulling the required images from AWS Public ECR.
+1. Pushing them into your private registry.
+1. Overriding the defaults in the CloudFormation stack by providing your registry's URI and the access-secret ARN via the Custom Upstream Docker Registry CloudFormation template parameters.
+
 ### DNS
 
-The system is hosted on a subdomain managed with an AWS Route53 hosted zone. For internet-facing Code Ocean deployments the hosted zone is public, and you will need to delegate to it from your parent or root domain. For internal deployments behind a VPN the Route53 hosted zone will be private.
+The system is hosted on a subdomain managed with an AWS Route53 hosted zone. For internet-facing Code Ocean deployments the hosted zone is public, and you will need to delegate to it from your parent or root domain. For internal deployments behind a VPN the Route53 hosted zone will be private. See our [Choose a Hosting Domain](https://docs.codeocean.com/admin-guide/deployment-guide/prerequisites#choose-a-hosting-domain) section for details.
 
 The system also uses an internal Route53 private hosted zone for internal service discovery.
 
@@ -129,11 +155,13 @@ There are three types of storage medium used:
     Where most of the internal persistent system data is stored. For example, a Compute Capsule in the system is backed by a git repo which is persisted in this storage type.
 
     The volume is configured with encryption at rest.
+
 *   S3 buckets:
 
     Used to store input (datasets) and output (results) data of Compute Capsules, as well as the internal docker registry storage and other system persistent storage buckets.
 
     All S3 buckets are private, with server-side encryption, and access logs enabled by default. S3 bucket versioning is enabled on buckets that store persistent data.
+
 *   EFS:
 
     The Datasets Cache EFS provides a computation (Compute Capsule) running on a worker instance machine with fast access to datasets. Once a dataset is available it is cached on EFS which gets mounted to the worker instance machines.
